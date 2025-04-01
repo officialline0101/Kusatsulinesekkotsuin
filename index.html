@@ -730,6 +730,7 @@
             <button type="button" id="firstirradiations" onclick="selectirradiations(this)" data-price="15000">ヘッドマッサージ</button>
             <button type="button" id="repeatirradiations" onclick="selectirradiations(this)" data-price="15000">足つぼマッサージ</button>
             <button type="button" id="sanirradiations" onclick="selectirradiations(this)" data-price="15000">歪み矯正</button>
+            <button type="button" id="sanirradiations" onclick="selectirradiations(this)" data-price="15000">吸い玉カッピング</button>
         </div>
 
         <div class="label">希望日時<span class="required">必須</span></div>
@@ -820,6 +821,7 @@
         // 訪問回数ごとの時間設定 (例：初めて=20分、2回目以降=15分)
         let irradiationsTimes = {
             'ヘッドマッサージ': 10,
+            '吸い玉カッピング': 10,
             '足つぼマッサージ': 10,
             '歪み矯正': 10
         };
