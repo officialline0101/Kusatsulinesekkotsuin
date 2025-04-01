@@ -716,7 +716,7 @@
             <button type="button" id="repeatVisit" onclick="selectVisit(this)">2回目以降</button>
         </div>
 
-        <div class="label">メニューをお選びください</div>
+        <div class="label" id="course">メニューをお選びください</div>
         <div class="info-text">※メニューを選択すると空き状況のカレンダーが表示されます</div>
         <div id="treatment-text" style="display: none; margin-bottom: 10px;"></div>
         <div class="symptoms">
@@ -730,7 +730,7 @@
             <button type="button" id="firstirradiations" onclick="selectirradiations(this)" data-price="15000">ヘッドマッサージ</button>
             <button type="button" id="repeatirradiations" onclick="selectirradiations(this)" data-price="15000">足つぼマッサージ</button>
             <button type="button" id="sanirradiations" onclick="selectirradiations(this)" data-price="15000">歪み矯正</button>
-            <button type="button" id="sanirradiations" onclick="selectirradiations(this)" data-price="15000">吸い玉カッピング</button>
+            <button type="button" id="yonirradiations" onclick="selectirradiations(this)" data-price="15000">吸い玉カッピング</button>
         </div>
 
         <div class="label">希望日時<span class="required">必須</span></div>
@@ -900,7 +900,7 @@
         <hr>
         <div class="info-row">
             <p>${selectedSymptomText}</p>
-            <button class="edit-button" onclick="scrollToElement('male'); scrollToElement('female'); scrollToElement('whitening');">修正する</button>
+            <button class="edit-button" onclick="scrollToElement('course'); scrollToElement('female'); scrollToElement('whitening');">修正する</button>
         </div>
         <hr>
         <div class="info-row">
