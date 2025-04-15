@@ -254,29 +254,28 @@
 
         .calendar th,
         .calendar td {
-            font-size: 22.5px;
+            font-size: 15.5px;
             /* ここでフォントサイズを変更 */
             text-align: center;
-            padding: 15px;
+            padding: 1px;
             cursor: pointer;
             vertical-align: top;
             width: auto;
+            padding-top: 3px; /* ← 追加：少し下にずらす */
             /* 通常のセルは自動調整 */
             box-sizing: border-box;
             border: 2px solid #696969;
         }
 
         .calendar th:first-child,
-        .calendar td:first-child {
-            width: 17%;
-            /* ここで時間列の幅を調整 */
-            font-size: 15.5px;
-            /* フォントサイズを変更 */
-            text-align: left;
-            /* 左寄せ */
-            padding-left: 6px;
-            /* 少しだけ左に寄せる */
-        }
+.calendar td:first-child {
+    width: 17%;
+    font-size: 15.5px;
+    text-align: left;
+    padding-left: 5px;
+    padding-top: 2px; /* ← 追加：少し下にずらす */
+    vertical-align: top; /* 必要に応じて top / middle / bottom を調整 */
+}
 
         .calendar th {
             background-color: #f7f7f7;
@@ -288,7 +287,7 @@
 
         .calendar td.selected {
             background-color: hsl(125, 100%, 60%);
-            color: #fff;
+            color: #ff2323;
         }
 
         .week-button-container {
@@ -693,6 +692,32 @@
         margin-top: 30px;
     }
         
+    .info-textopop {
+    width: 100%;
+    margin: 5; /* 左右の余白をなくす */
+    font-size: 13px;
+    color: #000000;
+    line-height: 1.5;
+    text-align: center;
+    word-wrap: break-word;
+    background-color: #eef9f5;
+    padding: 6px;
+    border-radius: 4px;
+    box-sizing: border-box; /* パディングを含めてもはみ出さないように */
+    margin-bottom: 10px; /* 下に10pxの隙間を作る */
+}
+
+        /* 携帯端末向けのレスポンシブデザイン */
+        @media (max-width: 768px) {
+            .info-texttopop {
+                font-size: 11.5px;
+                /* スマホでは少し小さく */
+                margin-top: 10px;
+                /* 上下のマージンを調整 */
+                line-height: 2.0;
+                /* テキストの高さ調整 */
+            }
+        }
     </style>
 </head>
 
@@ -725,16 +750,18 @@
         <div id="treatment-text" style="display: none; margin-bottom: 10px;"></div>
         <div class="symptoms">
             <button type="button" onclick="selectSymptom(this, 'treatment1')" data-price="15000">もみほぐし60分</button>
-            <button type="button" onclick="selectSymptom(this, 'treatment2')" data-price="15000">もみほぐし90分</button>
+            <button type="button" onclick="selectSymptom(this, 'treatment2')" data-price="15000">もみほぐし80分</button>
+            <button type="button" onclick="selectSymptom(this, 'treatment2')" data-price="15000">もみほぐし100分</button>
             <button type="button" onclick="selectSymptom(this, 'treatment2')" data-price="15000">もみほぐし120分</button>
         </div>
         <div class="highlight-background">
             <span class="highlight-text">オプション</span>
         </div>
         <div class="irradiations">
+            <div class="info-textopop">オプション 1500円（＋所要時間15分）</div>
             <button type="button" id="firstirradiations" onclick="selectirradiations(this)" data-price="15000">ヘッドマッサージ</button>
             <button type="button" id="repeatirradiations" onclick="selectirradiations(this)" data-price="15000">足つぼマッサージ</button>
-            <button type="button" id="sanirradiations" onclick="selectirradiations(this)" data-price="15000">歪み矯正ストレッチ</button>
+            <button type="button" id="sanirradiations" onclick="selectirradiations(this)" data-price="15000">ストレッチ</button>
             <button type="button" id="yonirradiations" onclick="selectirradiations(this)" data-price="15000">吸い玉カッピング</button>
         </div>
 
@@ -752,8 +779,8 @@
             </div>
 
             <div class="week-button-container">
-                <button class="week-button" onclick="previousWeek()">3日前</button>
-                <button class="week-button" onclick="nextWeek()">3日後</button>
+                <button class="week-button" onclick="previousWeek()">4日前</button>
+                <button class="week-button" onclick="nextWeek()">4日後</button>
             </div>
 
             <div id="calendar1" class="calendar">
@@ -761,6 +788,7 @@
                     <thead>
                         <tr id="calendar-header">
                             <th>時間</th>
+                            <th></th>
                             <th></th>
                             <th></th>
                             <th></th>
@@ -824,14 +852,15 @@
             'ヘッドマッサージ': 10,
             '吸い玉カッピング': 10,
             '足つぼマッサージ': 10,
-            '歪み矯正ストレッチ': 10
+            'ストレッチ': 10
         };
 
         let selectedirradiationsTime = 0; // 訪問回数で選択された時間
 
         let menuTimes = {
             'もみほぐし60分': 60,
-            'もみほぐし90分': 90,
+            'もみほぐし80分': 80,
+            'もみほぐし100分': 100,
             'もみほぐし120分': 120
         };
 
@@ -1252,7 +1281,7 @@
                     timeCell.textContent = time;
                     row.appendChild(timeCell);
 
-                    for (let i = 0; i < 3; i++) {
+                    for (let i = 0; i < 4; i++) {
                         const cell = document.createElement('td');
                         cell.addEventListener('click', () => selectDate(cell));
                         row.appendChild(cell);
@@ -1524,12 +1553,12 @@
         }
 
         function nextWeek() {
-            currentDate.setDate(currentDate.getDate() + 3);
+            currentDate.setDate(currentDate.getDate() + 4);
             fetchAvailability(currentDate);
         }
 
         function previousWeek() {
-            currentDate.setDate(currentDate.getDate() - 3);
+            currentDate.setDate(currentDate.getDate() - 4);
             fetchAvailability(currentDate);
         }
 
