@@ -1258,7 +1258,6 @@
             const table = calendar.querySelector('table tbody');
 
             const times = [
-    '09:00', '09:15', '09:30', '09:45',
     '10:00', '10:15', '10:30', '10:45',
     '11:00', '11:15', '11:30', '11:45',
     '12:00', '12:15', '12:30', '12:45',
@@ -1269,9 +1268,7 @@
     '17:00', '17:15', '17:30', '17:45',
     '18:00', '18:15', '18:30', '18:45',
     '19:00', '19:15', '19:30', '19:45',
-    '20:00', '20:15', '20:30', '20:45',
-    '21:00', '21:15', '21:30', '21:45',
-    '22:00'
+    '20:00'
 ];
 
             if (table.rows.length === 0) {
@@ -1350,11 +1347,11 @@
 
                     // 18時以降に終了する予約を不可にする (火水木金のみ)
                     if ([0, 1, 2, 4, 5, 6].includes(slotEnd.getDay())) { // 火:2, 水:3, 木:4, 金:5
-                        if (slotEnd.getHours() === 22 && slotEnd.getMinutes() > 0) {
+                        if (slotEnd.getHours() === 20 && slotEnd.getMinutes() > 0) {
                             cell.textContent = '✕';
                             cell.classList.add('unavailable');
                             continue;
-                        } else if (slotEnd.getHours() > 22) {
+                        } else if (slotEnd.getHours() > 20) {
                             cell.textContent = '✕';
                             cell.classList.add('unavailable');
                             continue;
@@ -1363,11 +1360,11 @@
 
                     // 18時以降に終了する予約を不可にする (火水木金のみ)
                     if ([3].includes(slotEnd.getDay())) { // 火:2, 水:3, 木:4, 金:5
-                        if (slotEnd.getHours() === 21 && slotEnd.getMinutes() > 0) {
+                        if (slotEnd.getHours() === 22 && slotEnd.getMinutes() > 0) {
                             cell.textContent = '✕';
                             cell.classList.add('unavailable');
                             continue;
-                        } else if (slotEnd.getHours() > 21) {
+                        } else if (slotEnd.getHours() > 22) {
                             cell.textContent = '✕';
                             cell.classList.add('unavailable');
                             continue;
