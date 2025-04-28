@@ -1389,46 +1389,52 @@
                         return slotStart < event.end && event.start < slotEnd;
                     });
 
-                    const count = availability.reduce((acc, slot) => {
-                        const eventStart = new Date(slot.startTime);
-                        const eventEnd = new Date(slot.endTime);
+        // 🔥ここから重要：slotStart～slotEndの間で3つ以上重なる瞬間があるか？
+        let overLimit = false;
 
-                        if (eventStart < slotEnd && slotStart < eventEnd && slot.title !== "営業日") {
-                            return acc + 1;
-                        }
-                        return acc;
-                    }, 0);
+        // 5分刻みでチェック（精度を上げたいなら1分単位にもできる）
+        for (let checkTime = new Date(slotStart.getTime()); checkTime < slotEnd; checkTime.setMinutes(checkTime.getMinutes() + 5)) {
+            const overlapping = availability.reduce((acc, slot) => {
+                const eventStart = new Date(slot.startTime);
+                const eventEnd = new Date(slot.endTime);
+                if (slot.title !== "営業日" && eventStart <= checkTime && checkTime < eventEnd) {
+                    acc++;
+                }
+                return acc;
+            }, 0);
 
-                    // 営業日のイベント時間内に他のイベントがある場合
-                    if (isBusinessEventTime && count > 0) {
-                        cell.textContent = '✕';
-                        cell.classList.add('unavailable');
-                    }
-                    // 営業日のイベント時間（他のイベントがない場合）
-                    else if (isBusinessEventTime) {
-                        cell.textContent = '◯';
-                        cell.classList.add('available');
-                    }
-                    // 営業日で、指定されている時間以外の時間は×
-                    else if (businessEventTimes.length > 0) {
-                        cell.textContent = '✕';
-                        cell.classList.add('unavailable');
-                    }
-                    // 営業日でかつ他のイベントがない場合
-                    else if (isBusinessDay && count === 0) {
-                        cell.textContent = '◯';
-                        cell.classList.add('available');
-                    }
-                    // それ以外の条件
-                    else if (count <= 1) {
-                        cell.textContent = '◯';
-                        cell.classList.add('available');
-                    } else {
-                        cell.textContent = '✕';
-                        cell.classList.add('unavailable');
-                    }
+            if (overlapping >= 2) { // ここが2になったら、これ以上入れたら3つ目になる
+                overLimit = true;
+                break;
+            }
+        }
 
-                    cell.setAttribute('data-date', slotStart.toISOString());
+        if (isBusinessEventTime && overLimit) {
+            cell.textContent = '✕';
+            cell.classList.add('unavailable');
+        }
+        else if (isBusinessEventTime) {
+            cell.textContent = '◯';
+            cell.classList.add('available');
+        }
+        else if (businessEventTimes.length > 0) {
+            cell.textContent = '✕';
+            cell.classList.add('unavailable');
+        }
+        else if (isBusinessDay && !overLimit) {
+            cell.textContent = '◯';
+            cell.classList.add('available');
+        }
+        else if (!overLimit) {
+            cell.textContent = '◯';
+            cell.classList.add('available');
+        }
+        else {
+            cell.textContent = '✕';
+            cell.classList.add('unavailable');
+        }
+
+        cell.setAttribute('data-date', slotStart.toISOString());
                 }
             }
         }
