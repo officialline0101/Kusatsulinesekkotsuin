@@ -924,11 +924,6 @@
         </div>
         <hr>
         <div class="info-row">
-            <p>${visitCountText}</p>
-            <button class="edit-button" onclick="scrollToElement('firstVisit')">修正する</button>
-        </div>
-        <hr>
-        <div class="info-row">
             <p>${selectedSymptomText}</p>
             <button class="edit-button" onclick="scrollToElement('course'); scrollToElement('female'); scrollToElement('whitening');">修正する</button>
         </div>
@@ -936,10 +931,6 @@
         <div class="info-row">
             <p>${irradiationsText}</p>
             <button class="edit-button" onclick="scrollToElement('firstirradiations')">修正する</button>
-        </div>
-        <hr>
-        <div class="info-row">
-            <p>${totalTimeText}</p>
         </div>
         <hr>
         <div class="info-row">
@@ -1115,22 +1106,32 @@
         }
 
         function selectVisit(element) {
-            // 選択された日時をリセット
-            selectedFullDate = '';
+    // すでに選択されている場合は選択解除する
+    if (element.classList.contains('active')) {
+        element.classList.remove('active');
+        visitCount = '';
+        selectedVisitTime = 0;
+        selectedFullDate = '';
+        fetchAvailability(currentDate); // カレンダー更新
+        return;
+    }
 
-            document.getElementById('firstVisit').classList.remove('active');
-            document.getElementById('repeatVisit').classList.remove('active');
-            element.classList.add('active');
-            visitCount = element.innerText;
+    // 他のボタンの選択解除
+    document.getElementById('firstVisit').classList.remove('active');
 
-            // 選択された訪問回数に対応する時間を取得
-            selectedVisitTime = visitTimes[visitCount];
+    // 選択されたボタンに active クラスを追加
+    element.classList.add('active');
+    visitCount = element.innerText;
 
-            console.log('選択された訪問回数の時間:', selectedVisitTime);
+    // 選択された訪問回数に対応する時間を取得
+    selectedVisitTime = visitTimes[visitCount];
+    selectedFullDate = ''; // 日付リセット
 
-            // カレンダーを更新するために取得する日付を渡す
-            fetchAvailability(currentDate);
-        }
+    console.log('選択された訪問回数の時間:', selectedVisitTime);
+
+    // カレンダーを更新
+    fetchAvailability(currentDate);
+}
 
         function selectDate(cell) {
             // "unavailable" クラスが付いている場合はクリックを無効化
