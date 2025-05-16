@@ -1357,7 +1357,7 @@ for (let i = 0; i < 7; i++) {
 
         // 木曜日のみ：22時以降に終了する場合は✕
         if ([3].includes(slotEnd.getDay())) {
-            if (slotEnd.getHours() === 22 && slotEnd.getMinutes() > 0 || slotEnd.getHours() > 22) {
+            if (slotEnd.getHours() === 20 && slotEnd.getMinutes() > 0 || slotEnd.getHours() > 20) {
                 cell.textContent = '✕';
                 cell.classList.add('unavailable');
                 continue;
