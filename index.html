@@ -1555,6 +1555,9 @@ window.onload = () => {
             currentMonthElement.innerHTML = `<span class="year">${startDate.getFullYear()}年</span><br><span class="month">${startDate.getMonth() + 1}月</span>`;
 
         }
+        
+// 追加（スクリプトの上部どこでもOK）
+let spinnerDelayTimer = null;
 
         function nextmonth() {
             currentDate.setMonth(currentDate.getMonth() + 1); // 翌月に移動
@@ -1578,13 +1581,24 @@ window.onload = () => {
             fetchAvailability(currentDate);
         }
 
-        function showLoadingSpinner() {
-            document.getElementById('loadingSpinner').style.display = 'block';
-        }
+function showLoadingSpinner() {
+  const el = document.getElementById('loadingSpinner');
+  if (!el) return;
+  // 以前の遅延をキャンセルし、すぐ表示
+  if (spinnerDelayTimer) { clearTimeout(spinnerDelayTimer); spinnerDelayTimer = null; }
+  el.style.display = 'block';
+}
 
-        function hideLoadingSpinner() {
-            document.getElementById('loadingSpinner').style.display = 'none';
-        }
+function hideLoadingSpinner() {
+  const el = document.getElementById('loadingSpinner');
+  if (!el) return;
+  // 「消す」のを +2秒 遅らせる
+  if (spinnerDelayTimer) clearTimeout(spinnerDelayTimer);
+  spinnerDelayTimer = setTimeout(() => {
+    el.style.display = 'none';
+    spinnerDelayTimer = null;
+  }, 2000); // ← ここが追加した2秒
+}
     </script>
 </body>
 
