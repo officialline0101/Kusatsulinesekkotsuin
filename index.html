@@ -1442,16 +1442,6 @@ for (let checkTime = new Date(slotStart.getTime()); checkTime < slotEnd; checkTi
 }
 }
 
-        // 🎀 ページ読み込み時に1回、以後は1分ごとに自動でfetchする魔法タイム✨
-window.onload = () => {
-    fetchAvailability(new Date()); // 初回読み込み
-
-    setInterval(() => {
-        console.log("⏰ 1分経ったので再読み込みするYO〜！");
-        fetchAvailability(new Date()); // ← 毎回「今の時刻」で読み込み💡
-    }, 30000); // 60000ミリ秒 = 1分
-};
-
         function updateCalendarHeader(date) {
             const headerRow = document.getElementById('calendar-header');
             const headers = headerRow.querySelectorAll('th:not(:first-child)');
