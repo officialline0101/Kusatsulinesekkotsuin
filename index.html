@@ -1288,7 +1288,7 @@ async function submitForm() {
     const available = await checkCalendarAvailability(formData.dates[0]);
 
     if (!available) {
-        alert('予約が埋まりました。別の日時をお選びください。');
+        alert('申し訳ございません。操作中にご希望の予定日が埋まりました。別の希望日時をご選択ください。');
         availabilityCache = {};
         await fetchAvailability(currentDate);
         setTimeout(hideLoadingSpinner, 1000);
