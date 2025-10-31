@@ -760,6 +760,21 @@
     /* ✅ ここを追加（最前面に表示） */
     z-index: 9999;
 }
+
+.calendar {
+  /* overflow: hidden;  ← これを外す or コメントアウト */
+  overflow: visible;     /* 追従ヘッダーが隠れないように */
+}
+
+/* カレンダーのヘッダー行を追従させる */
+.calendar thead th {
+  position: sticky;
+  top: 0;               /* 画面上端に吸着（必要なら値を調整） */
+  z-index: 5;           /* 下のセルより前面に */
+  background: #f7f7f7;  /* 透け防止（お好みで） */
+  box-shadow: 0 2px 4px rgba(0,0,0,0.05); /* 追従時の見切れを少し強調（任意） */
+}
+
     </style>
 </head>
 
@@ -806,46 +821,48 @@
             <button type="button" id="yonirradiations" onclick="selectirradiations(this)" data-price="15000">吸い玉カッピング</button>
         </div>
 
-        <div class="label">希望日時<span class="required">必須</span></div>
-        <div class="calendar-container">
-            <!-- 月を独立して配置 -->
-            <div class="current-month-container">
-                <span class="current-month" id="currentMonth">月</span>
-            </div>
+<div class="label">希望日時<span class="required">必須</span></div>
+<div class="calendar-container">
+  <!-- 追従させるバー（ラッパー追加） -->
+  <div class="calendar-toolbar">
+    <!-- 月を独立して配置 -->
+    <div class="current-month-container">
+      <span class="current-month" id="currentMonth">月</span>
+    </div>
 
-            <!-- 月移動ボタンを週移動ボタンの上に配置 -->
-            <div class="month-button-container">
-                <button class="month-button" onclick="previousmonth()">前月</button>
-                <button class="month-button" onclick="nextmonth()">翌月</button>
-            </div>
+    <!-- 月移動ボタン -->
+    <div class="month-button-container">
+      <button class="month-button" onclick="previousmonth()">前月</button>
+      <button class="month-button" onclick="nextmonth()">翌月</button>
+    </div>
 
-            <div class="week-button-container">
-                <button class="week-button" onclick="previousWeek()">4日前</button>
-                <button class="week-button" onclick="nextWeek()">4日後</button>
-            </div>
+    <!-- 週移動ボタン -->
+    <div class="week-button-container">
+      <button class="week-button" onclick="previousWeek()">4日前</button>
+      <button class="week-button" onclick="nextWeek()">4日後</button>
+    </div>
+  </div>
 
-            <div id="calendar1" class="calendar">
-                <table>
-                    <thead>
-                        <tr id="calendar-header">
-                            <th>時間</th>
-                            <th></th>
-                            <th></th>
-                            <th></th>
-                            <th></th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        <!-- カレンダーの内容がここに追加される -->
-                    </tbody>
-                </table>
-            </div>
+  <div id="calendar1" class="calendar">
+    <table>
+      <thead>
+        <tr id="calendar-header">
+          <th>時間</th>
+          <th></th>
+          <th></th>
+          <th></th>
+          <th></th>
+        </tr>
+      </thead>
+      <tbody><!-- カレンダーの内容がここに追加される --></tbody>
+    </table>
+  </div>
 
-            <div class="loading-spinner" id="loadingSpinner">
-                <div class="spinner"></div>
-                <div class="loading-text">読み込み中...</div>
-            </div>
-        </div>
+  <div class="loading-spinner" id="loadingSpinner">
+    <div class="spinner"></div>
+    <div class="loading-text">読み込み中...</div>
+  </div>
+</div>
 
         <div class="labelContent">メッセージ<br>（質問等お気軽にご記入ください）</div>
         <textarea id="message" rows="4" placeholder="メッセージを入力してください"></textarea>
