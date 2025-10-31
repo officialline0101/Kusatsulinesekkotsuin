@@ -973,7 +973,10 @@
             let totalTimeText = `<span style="color:#88705a;"><strong>【所要時間】</strong></span><br>・${hours > 0 ? hours + '時間' : ''}${minutes}分`;
 
             const totalAmountText = `<span style="color:#88705a;"><strong>【合計金額】</strong></span><br>・¥${menuPrice + optionsPrice}`;
-            const selectedDateText = selectedFullDate ? `<span style="color:#88705a;"><strong>【希望日時】</strong></span><br>・${selectedFullDate}` : '・日時が未選択です';
+const selectedDateText = selectedFullDate
+    ? `<span style="color:#88705a;"><strong>【希望日時】<span style="color:red;">≪必ずご確認ください≫</span></strong></span><br>・${selectedFullDate}`
+    : '・日時が未選択です';
+    
 
             // 修正ボタン付きのHTMLを作成
             document.getElementById('displayInfo').innerHTML = `
