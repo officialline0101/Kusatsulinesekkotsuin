@@ -283,7 +283,7 @@
 
         /* --- カレンダー --- */
         .calendar-container {
-            display: flex; flex-direction: column; align-items: center;
+            display: flex; flex-direction: column; align-items: stretch;
             margin-bottom: 24px; position: relative;
             width: calc(100% - 48px);
         }
@@ -347,6 +347,28 @@
             background: var(--accent);
             padding: 5px 16px; border-radius: 20px;
             box-shadow: 0 3px 12px rgba(206,85,20,0.35);
+        }
+
+        /* --- カレンダー内読み込みメッセージ --- */
+        .calendar-loading {
+            display: flex; flex-direction: column;
+            justify-content: center; align-items: center;
+            min-height: 200px; width: 100%;
+            background: rgba(0,0,0,0.25);
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+        }
+        .calendar-loading .spinner {
+            width: 36px; height: 36px;
+            border: 3px solid var(--border);
+            border-top-color: var(--accent);
+            border-radius: 50%; animation: spin 0.8s linear infinite;
+        }
+        .calendar-loading-text {
+            margin-top: 14px; font-size: 13px;
+            color: var(--text-secondary);
+            font-family: var(--font-accent);
+            letter-spacing: 0.08em;
         }
 
         /* --- 送信ボタン --- */
@@ -603,6 +625,8 @@
         let totalAmount = 0; // 合計金額を格納する変数
         let menuPrice = 0; // メニューの価格
         let optionsPrice = 0; // オプションの合計価格
+        let dataLoaded = false; // GASデータ読み込み完了フラグ
+        let pendingCalendarShow = false; // 読み込み完了後にカレンダーを表示するフラグ
 
         document.addEventListener('DOMContentLoaded', function () {
             liff.init({
@@ -780,17 +804,52 @@
             button.addEventListener('click', updateDisplayInfo);
         });
 
+        // カレンダー表示判定関数（メニューまたはオプションが選択されているか）
+        function shouldShowCalendar() {
+            const hasMenu = document.querySelectorAll('.symptoms button.active').length > 0;
+            const hasOption = document.querySelectorAll('.irradiations button.active').length > 0;
+            return hasMenu || hasOption;
+        }
+
+        // カレンダーの表示/非表示を制御する関数
+        function updateCalendarVisibility() {
+            const calendarContainer = document.querySelector('.calendar-container');
+            const calendar1 = document.getElementById('calendar1');
+            const existingLoading = document.getElementById('calendarLoading');
+
+            if (shouldShowCalendar()) {
+                // カレンダーコンテナを表示
+                calendarContainer.style.display = 'flex';
+
+                if (dataLoaded) {
+                    // データ読み込み済み → カレンダーを表示、読み込みメッセージを削除
+                    calendar1.style.display = 'block';
+                    if (existingLoading) existingLoading.remove();
+                    pendingCalendarShow = false;
+                } else {
+                    // データ未読み込み → カレンダーを隠して読み込みメッセージを表示
+                    calendar1.style.display = 'none';
+                    pendingCalendarShow = true;
+                    if (!existingLoading) {
+                        const loadingDiv = document.createElement('div');
+                        loadingDiv.id = 'calendarLoading';
+                        loadingDiv.className = 'calendar-loading';
+                        loadingDiv.innerHTML = '<div class="spinner"></div><div class="calendar-loading-text">読み込み中...</div>';
+                        calendar1.parentNode.insertBefore(loadingDiv, calendar1);
+                    }
+                }
+            } else {
+                // メニュー/オプションが未選択 → カレンダーを非表示
+                calendarContainer.style.display = 'none';
+                pendingCalendarShow = false;
+                if (existingLoading) existingLoading.remove();
+                calendar1.style.display = 'block';
+            }
+        }
+
         document.querySelectorAll('.symptoms button').forEach(button => {
             button.addEventListener('click', () => {
-                const calendarContainer = document.querySelector('.calendar-container');
-
-                // 選択されたメニューがあればカレンダーを表示
-                if (document.querySelectorAll('.symptoms button.active').length > 0) {
-                    calendarContainer.style.display = 'block';
-                } else {
-                    // 選択が解除された場合、カレンダーを非表示
-                    calendarContainer.style.display = 'none';
-                }
+                updateCalendarVisibility();
             });
         });
 
@@ -889,6 +948,9 @@
             // 表示更新
             updateDisplayInfo();
 
+            // ✅ カレンダー表示の条件判定
+            updateCalendarVisibility();
+
             // ✅ キャッシュから再描画（料金表示後に実行）
             redrawFromCache();
         }
@@ -923,6 +985,9 @@
             selectedirradiationsTime = totalirradiationsTime;
 
             console.log('選択されたオプションの合計時間:', selectedirradiationsTime);
+
+            // ✅ カレンダー表示の条件判定（オプション選択時）
+            updateCalendarVisibility();
 
             // ✅ キャッシュから即時再描画（GAS通信なし）
             redrawFromCache();
@@ -1180,8 +1245,21 @@
 
                 availabilityCache[cacheKey] = { availability: data, businessDays: businessDays };
                 updateCalendar(data, businessDays);
+
+                // ✅ データ読み込み完了フラグを設定
+                dataLoaded = true;
+
+                // ✅ 読み込み待ちのカレンダー表示リクエストがあれば表示（読み込みメッセージも削除）
+                if (pendingCalendarShow && shouldShowCalendar()) {
+                    updateCalendarVisibility();
+                }
             } catch (error) {
                 console.error('Error fetching availability:', error);
+                // ✅ エラー時でもカレンダー表示をブロックしない
+                dataLoaded = true;
+                if (pendingCalendarShow && shouldShowCalendar()) {
+                    updateCalendarVisibility();
+                }
             } finally {
                 hideLoadingSpinner();
             }
@@ -1528,13 +1606,14 @@
             const spinner = document.getElementById('loadingSpinner');
             if (!spinner) return;
 
-            // すぐにスピナーを表示
-            spinner.style.display = 'flex';
-
-            // ✅ 初回ロード時は操作を無効化しない
-            if (!isInitialLoad) {
-                disableAllInteractiveElements(true);
+            // ✅ 初回ロード時はスピナーを表示せず、操作も無効化しない
+            if (isInitialLoad) {
+                return;
             }
+
+            // 2回目以降はスピナーを表示
+            spinner.style.display = 'flex';
+            disableAllInteractiveElements(true);
         }
 
         function hideLoadingSpinner() {
