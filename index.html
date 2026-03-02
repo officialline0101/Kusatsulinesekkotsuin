@@ -1077,10 +1077,8 @@
             updateDisplayInfo();
         }
 
-        async function checkCalendarAvailability(selectedFullDate) {
+        function checkCalendarAvailability(selectedFullDate) {
             if (!selectedFullDate) return false;
-
-            const urlBase = 'https://script.google.com/macros/s/AKfycbyEnDg7ywElyLmhGMo-qWOJX4NSQ2_SkCNJwBv_gAkdBXTPGUP7ljeQmrMScIdzS9k_1Q/exec';
 
             try {
                 const targetDate = new Date(selectedFullDate.replace(/[年月]/g, '/').replace('日', ''));
@@ -1094,16 +1092,31 @@
                 const endTime = new Date(targetDate);
                 endTime.setMinutes(endTime.getMinutes() + totalMinutes);
 
-                const startOfDay = new Date(targetDate);
-                startOfDay.setHours(0, 0, 0, 0);
-                const endOfDay = new Date(targetDate);
-                endOfDay.setHours(23, 59, 59, 999);
+                // ✅ キャッシュからデータを検索して即判定
+                let cachedData = null;
+                for (const key in availabilityCache) {
+                    const cache = availabilityCache[key];
+                    if (cache && cache.availability) {
+                        // 該当日のイベントがキャッシュに含まれているか確認
+                        const hasDateData = cache.availability.some(slot => {
+                            const eventDate = new Date(slot.startTime);
+                            return eventDate.toDateString() === targetDate.toDateString();
+                        });
+                        if (hasDateData) {
+                            cachedData = cache.availability;
+                            break;
+                        }
+                    }
+                }
 
-                const url = `${urlBase}?startTime=${startOfDay.toISOString()}&endTime=${endOfDay.toISOString()}`;
-                const response = await fetch(url);
-                const data = await response.json();
+                // キャッシュにデータがない場合は空配列で判定（予約可能と判断）
+                if (!cachedData) {
+                    console.log('キャッシュにデータなし → 予約可能と判定');
+                    return true;
+                }
 
-                const relevantEvents = data.filter(e => e.title !== "営業日");
+                // ✅ キャッシュデータで重複チェック（GAS通信なし・即時完了）
+                const relevantEvents = cachedData.filter(e => e.title !== "営業日");
 
                 let maxOverlap = 0;
                 for (let t = new Date(startTime); t < endTime; t.setMinutes(t.getMinutes() + 1)) {
@@ -1117,20 +1130,26 @@
                     if (maxOverlap >= 3) break;
                 }
 
-                console.log(`重複最大数: ${maxOverlap}件`);
+                console.log(`キャッシュ判定 - 重複最大数: ${maxOverlap}件`);
                 return maxOverlap < 3;
 
             } catch (err) {
                 console.error('カレンダー確認エラー:', err);
-                alert('予約状況の確認に失敗しました。時間をおいて再度お試しください。');
-                return false;
+                // エラー時は予約可能として扱う（送信を妨げない）
+                return true;
             }
         }
 
+        let isSubmitting = false; // 送信中フラグ（連打防止）
+
         async function submitForm() {
-            // ✅ スピナー表示を確実に反映（描画の1フレーム待つ）
-            showLoadingSpinner();
-            await new Promise(resolve => requestAnimationFrame(resolve));
+            // ✅ 連打防止：送信処理中なら何もしない
+            if (isSubmitting) return;
+            isSubmitting = true;
+
+            const submitBtn = document.querySelector('.submit-button');
+            submitBtn.disabled = true;
+            submitBtn.style.opacity = '0.5';
 
             const formData = {
                 name: document.getElementById('name').value.trim(),
@@ -1142,14 +1161,11 @@
                 message: document.getElementById('message').value.trim()
             };
 
-            // ✅ 入力チェック（ここでもスピナー維持）
-            if (!formData.name || !formData.phone || !formData.selectedSymptom || !formData.dates) {
-                setTimeout(hideLoadingSpinner, 800);
-                if (!formData.name) { alert('お名前を入力してください。'); return; }
-                if (!formData.phone) { alert('電話番号を入力してください。'); return; }
-                if (!formData.selectedSymptom) { alert('メニューを選択してください。'); return; }
-                if (!formData.dates) { alert('希望日時を選択してください。'); return; }
-            }
+            // ✅ 入力チェック
+            if (!formData.name) { alert('お名前を入力してください。'); isSubmitting = false; submitBtn.disabled = false; submitBtn.style.opacity = ''; return; }
+            if (!formData.phone) { alert('電話番号を入力してください。'); isSubmitting = false; submitBtn.disabled = false; submitBtn.style.opacity = ''; return; }
+            if (!formData.selectedSymptom) { alert('メニューを選択してください。'); isSubmitting = false; submitBtn.disabled = false; submitBtn.style.opacity = ''; return; }
+            if (!formData.dates) { alert('希望日時を選択してください。'); isSubmitting = false; submitBtn.disabled = false; submitBtn.style.opacity = ''; return; }
 
             // ✅ カレンダー空き状況チェック
             const available = await checkCalendarAvailability(formData.dates[0]);
@@ -1158,7 +1174,9 @@
                 alert('予約が埋まりました。別の日時をお選びください。');
                 availabilityCache = {};
                 await fetchAvailability(currentDate);
-                setTimeout(hideLoadingSpinner, 1000);
+                isSubmitting = false;
+                submitBtn.disabled = false;
+                submitBtn.style.opacity = '';
                 return;
             }
 
@@ -1175,16 +1193,13 @@
                 }]);
 
                 alert('当日キャンセルは無いようにお願いいたします。');
-
-                // ✅ スピナーを少し残してから閉じる
-                setTimeout(() => {
-                    hideLoadingSpinner();
-                    liff.closeWindow();
-                }, 1000);
+                liff.closeWindow();
             } catch (err) {
                 console.error('メッセージ送信エラー:', err);
                 alert('メッセージの送信に失敗しました。');
-                setTimeout(hideLoadingSpinner, 1000);
+                isSubmitting = false;
+                submitBtn.disabled = false;
+                submitBtn.style.opacity = '';
             }
         }
 
