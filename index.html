@@ -1118,6 +1118,19 @@
                 // ✅ キャッシュデータで重複チェック（GAS通信なし・即時完了）
                 const relevantEvents = cachedData.filter(e => e.title !== "営業日");
 
+                // ★ ブロック専用タイトルが希望時間帯に重なる場合は件数に関係なく予約不可
+                const BLOCK_TITLES = ['予約不可', '休診', 'ブロック', '予約停止'];
+                const hasBlock = relevantEvents.some(e => {
+                    const es = new Date(e.startTime);
+                    const ee = new Date(e.endTime);
+                    const t = e.title || '';
+                    return es < endTime && ee > startTime && BLOCK_TITLES.some(b => t.indexOf(b) !== -1);
+                });
+                if (hasBlock) {
+                    console.log('ブロック予定と重複 → 予約不可');
+                    return false;
+                }
+
                 let maxOverlap = 0;
                 for (let t = new Date(startTime); t < endTime; t.setMinutes(t.getMinutes() + 1)) {
                     let overlapping = 1;
@@ -1426,6 +1439,13 @@
                         return slot.title !== "営業日" && eventStart < slotEnd && eventEnd > slotStart;
                     });
 
+                    // ★ ブロック専用タイトルがこの時間帯に重なる場合は件数に関係なく✕
+                    const BLOCK_TITLES = ['予約不可', '休診', 'ブロック', '予約停止'];
+                    const hasBlock = relevantEvents.some(slot => {
+                        const t = slot.title || '';
+                        return BLOCK_TITLES.some(b => t.indexOf(b) !== -1);
+                    });
+
                     for (let checkTime = new Date(slotStart.getTime()); checkTime < slotEnd; checkTime.setMinutes(checkTime.getMinutes() + 1)) {
                         let overlapping = 1; // 仮予約1件分を初めからカウント
 
@@ -1444,7 +1464,11 @@
                     }
 
                     // ⭐ 利用可否の最終判断（◯ or ✕）を決定するロジック
-                    if (isBusinessEventTime) {
+                    if (hasBlock) {
+                        // ★ ブロック専用タイトルが重なる → 件数に関係なく✕
+                        cell.textContent = '✕';
+                        cell.classList.add('unavailable');
+                    } else if (isBusinessEventTime) {
                         // 営業イベント中で上限オーバー → ✕／それ以外 → ◯
                         if (overLimit) {
                             cell.textContent = '✕';
