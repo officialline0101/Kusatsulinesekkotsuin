@@ -538,7 +538,8 @@
 
         <div class="label">ご来店回数</div>
         <div class="visit-buttons">
-            <button type="button" id="firstVisit" onclick="selectVisit(this)">初めての来店、3ヶ月以上経過してる方</button>
+            <button type="button" id="firstVisit" onclick="selectVisit(this)">初めての来店</button>
+            <button type="button" id="blankVisit" onclick="selectVisit(this)">3ヶ月以上経過してる方</button>
             <button type="button" id="repeatVisit" onclick="selectVisit(this)">2回目以降</button>
         </div>
 
@@ -642,7 +643,8 @@
 
         // 訪問回数ごとの時間設定 (例：初めて=20分、2回目以降=15分)
         let visitTimes = {
-            '1回目': 0,
+            '初めての来店': 0,
+            '3ヶ月以上経過してる方': 0,
             '2回目以降': 0
         };
 
@@ -668,6 +670,18 @@
         // 来店回数別のメニュー料金
         let menuPrices = {
             '': {
+                'もみほぐし60分': 8000,
+                'もみほぐし80分': 10000,
+                'もみほぐし100分': 12000,
+                'もみほぐし120分': 14000
+            },
+            '初めての来店': {
+                'もみほぐし60分': 8000,
+                'もみほぐし80分': 10000,
+                'もみほぐし100分': 12000,
+                'もみほぐし120分': 14000
+            },
+            '3ヶ月以上経過してる方': {
                 'もみほぐし60分': 8000,
                 'もみほぐし80分': 10000,
                 'もみほぐし100分': 12000,
@@ -1013,15 +1027,14 @@
             }
 
             // 他のボタンの選択解除
-            document.getElementById('firstVisit').classList.remove('active');
-            document.getElementById('repeatVisit').classList.remove('active');
+            document.querySelectorAll('.visit-buttons button').forEach(btn => btn.classList.remove('active'));
 
             // 選択されたボタンに active クラスを追加
             element.classList.add('active');
             visitCount = element.innerText;
 
             // 選択された訪問回数に対応する時間を取得
-            selectedVisitTime = visitTimes[visitCount];
+            selectedVisitTime = visitTimes[visitCount] || 0;
             selectedFullDate = ''; // 日付リセット
 
             console.log('選択された訪問回数の時間:', selectedVisitTime);
