@@ -629,6 +629,10 @@
         let dataLoaded = false; // GASデータ読み込み完了フラグ
         let pendingCalendarShow = false; // 読み込み完了後にカレンダーを表示するフラグ
 
+        // ▼ アクセスカウンター用GAS（ウェブアプリ）のURL
+        //    ※アクセス解析用のGASをデプロイしたらURLを貼り付けてください（未設定の間は何もしません）
+        const COUNTER_GAS_URL = 'https://script.google.com/macros/s/AKfycbwyYqDfCK4ChFkngWBLMlM3r03PkcLNxs0anhIgPQri3BgknAmBDCdn7_QfA7uxrzw/exec';
+
         document.addEventListener('DOMContentLoaded', function () {
             liff.init({
                 liffId: '2007161536-PZgwmB8B'
@@ -637,6 +641,14 @@
             }).catch((err) => {
                 console.log('LIFF初期化失敗', err);
             });
+
+            // ▼ 閲覧数カウント送信（結果は待たない・失敗してもフォームの動作に影響なし）
+            if (COUNTER_GAS_URL.startsWith('https://')) {
+                try {
+                    fetch(COUNTER_GAS_URL + '?action=count', { mode: 'no-cors', cache: 'no-store', keepalive: true })
+                        .catch(function () { /* 計測失敗は無視 */ });
+                } catch (e) { /* 計測失敗は無視 */ }
+            }
 
             fetchAvailability(currentDate);
         });
