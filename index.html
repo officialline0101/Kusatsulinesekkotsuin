@@ -1233,17 +1233,20 @@
                 ? `${formData.selectedSymptom},${formData.irradiationsCount}`
                 : `${formData.selectedSymptom}`;
 
-            // ✅ メッセージ送信処理
+            // ✅ メッセージ送信処理（送信が終わるまでスピナーを出したままにする）
+            showLoadingSpinner();
             try {
                 await liff.sendMessages([{
                     type: 'text',
                     text: `【予約フォーム】\nお名前：${formData.name}\n電話番号：${formData.phone}\nご来店回数：${formData.visitCount}\nメニュー：${menuText}\n希望日時：\n ${formData.dates[0]}\nメッセージ：${formData.message}`
                 }]);
 
+                hideLoadingSpinner();
                 alert('当日キャンセルは無いようにお願いいたします。');
                 liff.closeWindow();
             } catch (err) {
                 console.error('メッセージ送信エラー:', err);
+                hideLoadingSpinner();
                 alert('メッセージの送信に失敗しました。');
                 isSubmitting = false;
                 submitBtn.disabled = false;
@@ -1685,6 +1688,14 @@
                 return;
             }
 
+            // ✅ 直前の「1秒後に消す」タイマーが残っていれば取り消す
+            //    （週送り直後に「予約を行う」を押すと、古いタイマーで
+            //      通信中のスピナーがすぐ消えてしまう不具合の対策）
+            if (spinnerDelayTimer) {
+                clearTimeout(spinnerDelayTimer);
+                spinnerDelayTimer = null;
+            }
+
             // 2回目以降はスピナーを表示
             spinner.style.display = 'flex';
             disableAllInteractiveElements(true);
@@ -1694,8 +1705,14 @@
             const spinner = document.getElementById('loadingSpinner');
             if (!spinner) return;
 
+            // ✅ 既に消すタイマーがあれば置き換える（タイマーは常に1本だけ）
+            if (spinnerDelayTimer) {
+                clearTimeout(spinnerDelayTimer);
+            }
+
             // ✅ スピナーを1秒遅れて消す
-            setTimeout(() => {
+            spinnerDelayTimer = setTimeout(() => {
+                spinnerDelayTimer = null;
                 spinner.style.display = 'none';
                 disableAllInteractiveElements(false);
 
