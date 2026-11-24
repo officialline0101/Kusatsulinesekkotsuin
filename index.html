@@ -545,6 +545,9 @@
 
         <div class="label" id="course">メニューをお選びください</div>
         <div class="info-text">※メニューを選択すると空き状況のカレンダーが表示されます</div>
+        <!-- 料金改定のお知らせ（12月15日まで自動表示。期間はスクリプト内 PRICE_NOTICE_END で設定） -->
+        <div class="info-text" id="price-revision-notice" style="display: none; color: var(--accent); font-weight: bold;">
+            ※12月1日ご来店分より料金を改定いたします</div>
         <div id="treatment-text" style="display: none; margin-bottom: 10px;"></div>
         <div class="symptoms">
             <button type="button" onclick="selectSymptom(this, 'treatment1')" data-price="15000">もみほぐし60分</button>
@@ -679,33 +682,108 @@
             'もみほぐし120分': 120
         };
 
-        // 来店回数別のメニュー料金
+        // 来店回数別のメニュー料金（2026年12月1日ご来店分からの新料金）
         let menuPrices = {
             '': {
-                'もみほぐし60分': 9000,
-                'もみほぐし80分': 11000,
-                'もみほぐし100分': 13000,
-                'もみほぐし120分': 15000
+                'もみほぐし60分': 10000,
+                'もみほぐし80分': 12000,
+                'もみほぐし100分': 14000,
+                'もみほぐし120分': 16000
             },
             '初めての来店': {
-                'もみほぐし60分': 9000,
-                'もみほぐし80分': 11000,
-                'もみほぐし100分': 13000,
-                'もみほぐし120分': 15000
+                'もみほぐし60分': 10000,
+                'もみほぐし80分': 12000,
+                'もみほぐし100分': 14000,
+                'もみほぐし120分': 16000
             },
             '3ヶ月以上経過してる方': {
-                'もみほぐし60分': 9000,
-                'もみほぐし80分': 11000,
-                'もみほぐし100分': 13000,
-                'もみほぐし120分': 15000
+                'もみほぐし60分': 10000,
+                'もみほぐし80分': 12000,
+                'もみほぐし100分': 14000,
+                'もみほぐし120分': 16000
             },
             '2回目以降': {
-                'もみほぐし60分': 7000,
-                'もみほぐし80分': 9000,
-                'もみほぐし100分': 11000,
-                'もみほぐし120分': 13000
+                'もみほぐし60分': 8000,
+                'もみほぐし80分': 10000,
+                'もみほぐし100分': 12000,
+                'もみほぐし120分': 14000
             }
         };
+
+        // ▼ 料金改定（2026年12月1日ご来店分より各メニュー +1,000円）
+        //    料金は「予約した日」ではなく「ご来店日」で決まる。
+        //    11月30日までのご来店日は、上の新料金から改定額を引いた旧料金を表示する。
+        const PRICE_REVISION_DATE = new Date(2026, 11, 1);   // この日以降のご来店は新料金
+        const PRICE_REVISION_AMOUNT = 1000;                  // 改定額
+        const PRICE_NOTICE_END = new Date(2026, 11, 16);     // お知らせ文の表示終了（12月15日まで表示）
+
+        // 選択中の希望日（時刻なし）を返す。未選択なら null
+        function getSelectedVisitDate() {
+            if (!selectedFullDate) return null;
+            const m = selectedFullDate.match(/(\d+)年(\d+)月(\d+)日/);
+            return m ? new Date(Number(m[1]), Number(m[2]) - 1, Number(m[3])) : null;
+        }
+
+        // 料金を確定できる日付を返す。
+        // 希望日が未選択で、まだ改定前（旧料金の日も予約できる期間）なら null（＝未確定）
+        function getPricingDate() {
+            const selected = getSelectedVisitDate();
+            if (selected) return selected;
+            const today = new Date();
+            return today >= PRICE_REVISION_DATE ? today : null;
+        }
+
+        // 来店回数・メニュー・ご来店日から料金を返す
+        function getMenuPrice(visit, menuName, date) {
+            const base = (menuPrices[visit] && menuPrices[visit][menuName]) || 0;
+            if (!base) return 0;
+            return date < PRICE_REVISION_DATE ? base - PRICE_REVISION_AMOUNT : base;
+        }
+
+        // 指定したご来店日の料金表示（来店回数が未選択なら初回／2回目以降の両方）
+        function menuPriceLine(menuName, date) {
+            if (visitCount && menuPrices[visitCount] && menuPrices[visitCount][menuName]) {
+                return `¥${getMenuPrice(visitCount, menuName, date).toLocaleString()}`;
+            }
+            const firstPrice = getMenuPrice('', menuName, date);
+            const repeatPrice = getMenuPrice('2回目以降', menuName, date);
+            return firstPrice && repeatPrice
+                ? `初回 ¥${firstPrice.toLocaleString()} ／ 2回目以降 ¥${repeatPrice.toLocaleString()}`
+                : '';
+        }
+
+        // メニューボタン下に出す料金表示。希望日が未確定の間は改定前後の両方を出す
+        function menuPriceLabel(menuName, separator) {
+            const date = getPricingDate();
+            if (date) return menuPriceLine(menuName, date);
+            const dayBefore = new Date(PRICE_REVISION_DATE);
+            dayBefore.setDate(dayBefore.getDate() - 1);
+            const before = menuPriceLine(menuName, dayBefore);
+            const after = menuPriceLine(menuName, PRICE_REVISION_DATE);
+            if (!before || !after) return '';
+            const m = PRICE_REVISION_DATE.getMonth() + 1;
+            const d = PRICE_REVISION_DATE.getDate();
+            return `${dayBefore.getMonth() + 1}/${dayBefore.getDate()}まで：${before}${separator}${m}/${d}から：${after}`;
+        }
+
+        // 現在の選択内容（来店回数・メニュー・希望日）から料金とボタン下の表示を合わせ直す
+        function syncMenuPrice() {
+            const menuName = selectedSymptom && selectedSymptom.length > 0 ? selectedSymptom[0] : '';
+            const date = getPricingDate();
+            menuPrice = (menuName && visitCount && date) ? getMenuPrice(visitCount, menuName, date) : 0;
+
+            const activeMenuBtn = document.querySelector('.symptoms button.active');
+            const treatmentText = document.getElementById('treatment-text');
+            if (activeMenuBtn && treatmentText && menuName) {
+                treatmentText.innerHTML = `<div style="text-align: left;"><strong>${menuPriceLabel(menuName, '<br>')}</strong></div>`;
+            }
+        }
+
+        // 料金改定のお知らせは期間中だけ表示する
+        document.addEventListener('DOMContentLoaded', function () {
+            const notice = document.getElementById('price-revision-notice');
+            if (notice && new Date() < PRICE_NOTICE_END) notice.style.display = 'block';
+        });
 
         let selectedMenuTime = 0;
 
@@ -756,11 +834,18 @@
             let minutes = totalMinutes % 60;
             let totalTimeText = `<span style="color:#CE5514;"><strong>【所要時間】</strong></span><br>・${hours > 0 ? hours + '時間' : ''}${minutes}分`;
 
-            // 料金テキストを生成
+            // 料金テキストを生成（ご来店日に応じた料金に合わせ直してから表示）
+            syncMenuPrice();
+            const currentMenuName = selectedSymptom && selectedSymptom.length > 0 ? selectedSymptom[0] : '';
+            // 希望日が未選択で、改定前後どちらの料金になるか決まっていない状態
+            const pricePending = !!(currentMenuName && visitCount && !getPricingDate()
+                && menuPrices[visitCount] && menuPrices[visitCount][currentMenuName]);
             let priceLines = [];
             if (menuPrice > 0) {
                 const menuName = selectedSymptom && selectedSymptom.length > 0 ? selectedSymptom[0] : 'メニュー';
                 priceLines.push(`・${menuName}：¥${menuPrice.toLocaleString()}`);
+            } else if (pricePending) {
+                priceLines.push(`・${currentMenuName}：${menuPriceLabel(currentMenuName, ' ／ ')}`);
             }
             if (optionsPrice > 0) {
                 const optNames = irradiationsCount.split(', ');
@@ -769,7 +854,9 @@
                 });
             }
             const totalPrice = menuPrice + optionsPrice;
-            if (priceLines.length > 0) {
+            if (pricePending) {
+                priceLines.push('<strong>・合計：希望日時を選択すると表示されます</strong>');
+            } else if (priceLines.length > 0) {
                 priceLines.push(`<strong>・合計：¥${totalPrice.toLocaleString()}</strong>`);
             }
             const priceText = priceLines.length > 0
@@ -1034,6 +1121,7 @@
                 visitCount = '';
                 selectedVisitTime = 0;
                 selectedFullDate = '';
+                syncMenuPrice(); // 来店回数未選択の料金表示に戻す
                 redrawFromCache(); // キャッシュから即時再描画
                 return;
             }
